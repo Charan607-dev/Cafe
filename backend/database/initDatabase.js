@@ -30,18 +30,27 @@ const createOrderItemsTable = `
     )
 `;
 
-try {
-    await exec(createOrdersTable);
-    await exec(createOrderItemsTable);
-
-    // Migration: add customer_id column for existing databases
+export async function initializeDatabase() {
     try {
-        await exec(`ALTER TABLE orders ADD COLUMN customer_id TEXT`);
-    } catch (e) {
-        // Column already exists — safe to ignore
-    }
+        await exec(createOrdersTable);
+        await exec(createOrderItemsTable);
 
-    console.log("Database tables are ready.");
-} catch (error) {
-    console.error("Database initialization failed:", error.message);
+        // Migration: add customer_id column for existing databases
+        try {
+            await exec(
+                `ALTER TABLE orders ADD COLUMN customer_id TEXT`
+            );
+        } catch (error) {
+            // Column already exists — safe to ignore
+        }
+
+        console.log("Database tables are ready.");
+    } catch (error) {
+        console.error(
+            "Database initialization failed:",
+            error.message
+        );
+
+        throw error;
+    }
 }
