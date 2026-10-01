@@ -39,10 +39,48 @@ function Hero() {
                     </div>
                 </div>
 
-                {/* Right Visual */}
+                {/* Burger Animation */}
                 <div className="flex justify-center">
-                    <div className="flex h-80 w-80 items-center justify-center rounded-full bg-orange-200 text-8xl shadow-xl sm:h-96 sm:w-96">
-                        🍔
+                    <div className="burger-circle">
+                        <div className="burger">
+
+                            {/* Bottom Bun */}
+                            <div className="burger-part bottom-bun">
+                                <div className="bun-bottom-shape"></div>
+                            </div>
+
+                            {/* Patty */}
+                            <div className="burger-part patty">
+                                <div className="patty-shape"></div>
+                            </div>
+
+                            {/* Cheese */}
+                            <div className="burger-part cheese">
+                                <div className="cheese-shape"></div>
+                            </div>
+
+                            {/* Lettuce */}
+                            <div className="burger-part lettuce">
+                                <div className="lettuce-shape"></div>
+                            </div>
+
+                            {/* Tomato */}
+                            <div className="burger-part tomato">
+                                <div className="tomato-shape"></div>
+                            </div>
+
+                            {/* Top Bun */}
+                            <div className="burger-part top-bun">
+                                <div className="bun-top-shape">
+                                    <span className="sesame s1"></span>
+                                    <span className="sesame s2"></span>
+                                    <span className="sesame s3"></span>
+                                    <span className="sesame s4"></span>
+                                    <span className="sesame s5"></span>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
 

@@ -7,6 +7,7 @@ import MenuSection from "./components/menu/MenuSection";
 import Stats from "./components/home/Stats";
 import Footer from "./components/layout/Footer";
 import CartDrawer from "./components/cart/CartDrawer";
+import KineticGrid from "./components/ui/kinetic-grid";
 
 import { useCart } from "./hooks/useCart";
 
@@ -29,43 +30,43 @@ function App() {
     };
 
     return (
-        <div className="min-h-screen bg-white text-gray-900">
-
-            <Navbar
-                itemCount={itemCount}
-                onCartClick={() => setCartOpen(true)}
-            />
-
-            <main>
-                <Hero />
-
-                <WhyCampusCafe />
-
-                <MenuSection
-                    onAddToCart={addToCart}
-                    cart={cart}
-                    onIncrease={increaseQuantity}
-                    onDecrease={decreaseQuantity}
+        <KineticGrid globalColor="default" className="min-h-screen">
+            <div className="relative min-h-screen text-gray-900">
+                <Navbar
+                    itemCount={itemCount}
+                    onCartClick={() => setCartOpen(true)}
                 />
 
-                <Stats />
-            </main>
+                <main>
+                    <Hero />
 
-            <Footer />
+                    <WhyCampusCafe />
 
-            <CartDrawer
-                open={cartOpen}
-                onClose={() => setCartOpen(false)}
-                cart={cart}
-                total={total}
-                onIncrease={increaseQuantity}
-                onDecrease={decreaseQuantity}
-                onRemove={removeFromCart}
-                onCheckout={handleCheckout}
-            />
+                    <MenuSection
+                        onAddToCart={addToCart}
+                        cart={cart}
+                        onIncrease={increaseQuantity}
+                        onDecrease={decreaseQuantity}
+                    />
 
-        </div>
+                    <Stats />
+                </main>
+
+                <Footer />
+
+                <CartDrawer
+                    open={cartOpen}
+                    onClose={() => setCartOpen(false)}
+                    cart={cart}
+                    total={total}
+                    onIncrease={increaseQuantity}
+                    onDecrease={decreaseQuantity}
+                    onRemove={removeFromCart}
+                    onCheckout={handleCheckout}
+                />
+            </div>
+        </KineticGrid>
     );
 }
 
-export default App;
+export default App;

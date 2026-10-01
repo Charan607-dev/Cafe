@@ -10,3 +10,432 @@ body {
     margin: 0;
     font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ================================= */
+/* CAMPUS CAFE BURGER ANIMATION */
+/* ================================= */
+
+.burger-circle {
+    width: 380px;
+    height: 380px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #fed7aa;
+
+    box-shadow:
+        0 25px 45px rgba(0, 0, 0, 0.12);
+
+    overflow: hidden;
+}
+
+.burger {
+    position: relative;
+
+    width: 290px;
+    height: 270px;
+}
+
+
+/* ================================= */
+/* COMMON BURGER PART */
+/* ================================= */
+
+.burger-part {
+    position: absolute;
+
+    left: 50%;
+
+    width: 230px;
+
+    transform: translateX(-50%);
+
+    opacity: 0;
+}
+
+
+/* ================================= */
+/* BOTTOM BUN */
+/* ================================= */
+
+.bottom-bun {
+    bottom: 25px;
+
+    z-index: 1;
+
+    animation:
+        burgerBottom 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) 0.2s forwards;
+}
+
+.bun-bottom-shape {
+    width: 230px;
+    height: 48px;
+
+    background: linear-gradient(to bottom,
+            #d9954f,
+            #b96d32);
+
+    border-radius:
+        10px 10px 35px 35px;
+
+    box-shadow:
+        inset 0 -8px 0 rgba(120, 65, 25, 0.18),
+        0 5px 8px rgba(0, 0, 0, 0.12);
+}
+
+
+/* ================================= */
+/* PATTY */
+/* ================================= */
+
+.patty {
+    bottom: 62px;
+
+    z-index: 2;
+
+    animation:
+        burgerLayer 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) 0.8s forwards;
+}
+
+.patty-shape {
+    width: 240px;
+    height: 48px;
+
+    background: linear-gradient(to bottom,
+            #63341f,
+            #3f2115);
+
+    border-radius: 14px;
+
+    box-shadow:
+        inset 0 -7px 0 rgba(0, 0, 0, 0.18),
+        0 5px 8px rgba(0, 0, 0, 0.15);
+}
+
+
+/* ================================= */
+/* CHEESE */
+/* ================================= */
+
+.cheese {
+    bottom: 101px;
+
+    z-index: 3;
+
+    animation:
+        burgerLayer 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) 1.4s forwards;
+}
+
+.cheese-shape {
+    position: relative;
+
+    width: 245px;
+    height: 30px;
+
+    background: #ffd84d;
+
+    border-radius: 6px;
+
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+.cheese-shape::after {
+    content: "";
+
+    position: absolute;
+
+    right: 25px;
+    bottom: -14px;
+
+    width: 35px;
+    height: 30px;
+
+    background: #ffd84d;
+
+    clip-path: polygon(0 0,
+            100% 0,
+            75% 100%);
+}
+
+
+/* ================================= */
+/* LETTUCE */
+/* ================================= */
+
+.lettuce {
+    bottom: 126px;
+
+    z-index: 4;
+
+    animation:
+        burgerLayer 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) 2s forwards;
+}
+
+.lettuce-shape {
+    width: 245px;
+    height: 30px;
+
+    background: #62a82f;
+
+    border-radius: 50%;
+
+    box-shadow:
+        inset 0 -6px 0 rgba(42, 90, 20, 0.18);
+}
+
+.lettuce-shape::before,
+.lettuce-shape::after {
+    content: "";
+
+    position: absolute;
+
+    width: 55px;
+    height: 20px;
+
+    background: #75bd38;
+
+    border-radius: 50%;
+}
+
+.lettuce-shape::before {
+    left: 20px;
+    top: 8px;
+}
+
+.lettuce-shape::after {
+    right: 20px;
+    top: 5px;
+}
+
+
+/* ================================= */
+/* TOMATO */
+/* ================================= */
+
+.tomato {
+    bottom: 151px;
+
+    z-index: 5;
+
+    animation:
+        burgerLayer 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) 2.6s forwards;
+}
+
+.tomato-shape {
+    width: 220px;
+    height: 38px;
+
+    background: #ef4b3f;
+
+    border-radius: 50%;
+
+    box-shadow:
+        inset 0 -6px 0 rgba(160, 30, 25, 0.18);
+}
+
+.tomato-shape::before {
+    content: "";
+
+    position: absolute;
+
+    left: 35px;
+    top: 8px;
+
+    width: 18px;
+    height: 10px;
+
+    background: #ff8278;
+
+    border-radius: 50%;
+}
+
+
+/* ================================= */
+/* TOP BUN */
+/* ================================= */
+
+.top-bun {
+    bottom: 177px;
+
+    z-index: 6;
+
+    animation:
+        burgerTop 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) 3.2s forwards;
+}
+
+.bun-top-shape {
+    position: relative;
+
+    width: 240px;
+    height: 88px;
+
+    background: linear-gradient(to bottom,
+            #f5b765,
+            #d88b43);
+
+    border-radius:
+        120px 120px 25px 25px;
+
+    box-shadow:
+        inset 0 -10px 0 rgba(130, 70, 25, 0.15),
+        0 7px 10px rgba(0, 0, 0, 0.12);
+}
+
+
+/* ================================= */
+/* SESAME SEEDS */
+/* ================================= */
+
+.sesame {
+    position: absolute;
+
+    width: 10px;
+    height: 5px;
+
+    background: #fff1c7;
+
+    border-radius: 50%;
+
+    transform: rotate(-20deg);
+}
+
+.s1 {
+    top: 30px;
+    left: 55px;
+}
+
+.s2 {
+    top: 20px;
+    left: 105px;
+}
+
+.s3 {
+    top: 34px;
+    left: 150px;
+}
+
+.s4 {
+    top: 48px;
+    left: 85px;
+}
+
+.s5 {
+    top: 45px;
+    left: 175px;
+}
+
+
+/* ================================= */
+/* FALLING ANIMATIONS */
+/* ================================= */
+
+@keyframes burgerBottom {
+
+    0% {
+        opacity: 0;
+
+        transform:
+            translate(-50%, -220px) rotate(-8deg);
+    }
+
+    70% {
+        opacity: 1;
+
+        transform:
+            translate(-50%, 8px) rotate(3deg);
+    }
+
+    85% {
+        transform:
+            translate(-50%, -4px) rotate(-1deg);
+    }
+
+    100% {
+        opacity: 1;
+
+        transform:
+            translate(-50%, 0) rotate(0);
+    }
+}
+
+
+@keyframes burgerLayer {
+
+    0% {
+        opacity: 0;
+
+        transform:
+            translate(-50%, -220px) rotate(8deg);
+    }
+
+    65% {
+        opacity: 1;
+
+        transform:
+            translate(-50%, 10px) rotate(-3deg);
+    }
+
+    82% {
+        transform:
+            translate(-50%, -4px) rotate(1deg);
+    }
+
+    100% {
+        opacity: 1;
+
+        transform:
+            translate(-50%, 0) rotate(0);
+    }
+}
+
+
+@keyframes burgerTop {
+
+    0% {
+        opacity: 0;
+
+        transform:
+            translate(-50%, -260px) rotate(-10deg);
+    }
+
+    65% {
+        opacity: 1;
+
+        transform:
+            translate(-50%, 12px) rotate(4deg);
+    }
+
+    82% {
+        transform:
+            translate(-50%, -5px) rotate(-2deg);
+    }
+
+    100% {
+        opacity: 1;
+
+        transform:
+            translate(-50%, 0) rotate(0);
+    }
+}
+
+
+/* ================================= */
+/* MOBILE */
+/* ================================= */
+
+@media (max-width: 640px) {
+
+    .burger-circle {
+        width: 300px;
+        height: 300px;
+    }
+
+    .burger {
+        transform: scale(0.78);
+    }
+}
