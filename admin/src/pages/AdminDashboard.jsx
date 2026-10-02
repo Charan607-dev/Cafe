@@ -7,8 +7,9 @@ import {
     RefreshCw,
     LogOut,
 } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
-const API_URL = "http://localhost:5000";
+const API_URL = API_BASE_URL;
 
 function AdminDashboard() {
     const [stats, setStats] = useState({

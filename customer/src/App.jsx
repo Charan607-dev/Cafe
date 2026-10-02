@@ -14,6 +14,7 @@ import Welcome from "./pages/Welcome";
 import MyOrders from "./pages/MyOrders";
 
 import { useCart } from "./hooks/useCart";
+import { API_BASE_URL } from "./config/api";
 
 function generateCustomerId() {
     const timestamp = Date.now().toString(36);
@@ -108,7 +109,7 @@ function CustomerApp() {
 
         try {
             const response = await fetch(
-                "http://localhost:5000/api/orders",
+                `${API_BASE_URL}/api/orders`,
                 {
                     method: "POST",
                     headers: {

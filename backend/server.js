@@ -15,6 +15,8 @@ app.use(
         origin: [
             "http://localhost:5173",
             "http://localhost:5174",
+            "https://campus-cafe-customer.onrender.com",
+            "https://campus-cafe-admin.onrender.com",
         ],
     })
 );

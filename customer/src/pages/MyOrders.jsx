@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, ShoppingBag, RefreshCw, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 const STATUS_COLORS = {
     Pending: "bg-yellow-100 text-yellow-700",
@@ -155,7 +156,7 @@ function MyOrders({ customerId, onBackToMenu }) {
     const fetchOrders = async () => {
         try {
             const response = await fetch(
-                `http://localhost:5000/api/orders/customer/${customerId}`
+                `${API_BASE_URL}/api/orders/customer/${customerId}`
             );
 
             const data = await response.json();
