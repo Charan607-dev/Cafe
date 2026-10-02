@@ -1,88 +1,149 @@
-import sqlite3 from "sqlite3";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
+import pg from "pg";
 
-sqlite3.verbose();
+const { Pool } = pg;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const connectionString = process.env.DATABASE_URL;
 
-// Database directory
-const dataDirectory = path.join(__dirname, "../data");
-
-// Create the directory if it does not exist
-if (!fs.existsSync(dataDirectory)) {
-    fs.mkdirSync(dataDirectory, { recursive: true });
+if (!connectionString) {
+    throw new Error(
+        "DATABASE_URL environment variable is not set."
+    );
 }
 
-// Database file
-const dbPath = path.join(dataDirectory, "cafe.db");
-
-const db = new sqlite3.Database(dbPath, (error) => {
-    if (error) {
-        console.error(
-            "Database connection failed:",
-            error.message
-        );
-    } else {
-        console.log("Connected to SQLite database.");
-    }
+const pool = new Pool({
+    connectionString,
+    ssl: {
+        rejectUnauthorized: false,
+    },
 });
 
-export function run(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.run(sql, params, function (error) {
-            if (error) {
-                reject(error);
-                return;
-            }
+pool.on("connect", () => {
+    console.log("Connected to PostgreSQL database.");
+});
 
-            resolve({
-                id: this.lastID,
-                changes: this.changes,
-            });
-        });
+pool.on("error", (error) => {
+    console.error(
+        "Unexpected PostgreSQL pool error:",
+        error.message
+    );
+});
+
+function convertPlaceholders(sql) {
+    let index = 0;
+
+    return sql.replace(/\?/g, () => {
+        index += 1;
+        return `$${index}`;
     });
 }
 
-export function get(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.get(sql, params, (error, row) => {
-            if (error) {
-                reject(error);
-                return;
-            }
+export async function run(sql, params = []) {
+    const convertedSql = convertPlaceholders(sql);
 
-            resolve(row);
-        });
-    });
+    const result = await pool.query(
+        convertedSql,
+        params
+    );
+
+    return {
+        id:
+            result.rows[0]?.id ??
+            null,
+        changes: result.rowCount,
+    };
 }
 
-export function all(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.all(sql, params, (error, rows) => {
-            if (error) {
-                reject(error);
-                return;
-            }
+export async function get(sql, params = []) {
+    const convertedSql = convertPlaceholders(sql);
 
-            resolve(rows);
-        });
-    });
+    const result = await pool.query(
+        convertedSql,
+        params
+    );
+
+    return result.rows[0] || undefined;
 }
 
-export function exec(sql) {
-    return new Promise((resolve, reject) => {
-        db.exec(sql, (error) => {
-            if (error) {
-                reject(error);
-                return;
-            }
+export async function all(sql, params = []) {
+    const convertedSql = convertPlaceholders(sql);
 
-            resolve();
-        });
-    });
+    const result = await pool.query(
+        convertedSql,
+        params
+    );
+
+    return result.rows;
 }
 
-export default db;
+export async function exec(sql) {
+    const convertedSql = convertPlaceholders(sql);
+
+    await pool.query(convertedSql);
+}
+
+export async function withTransaction(callback) {
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const transactionDb = {
+            async run(sql, params = []) {
+                const convertedSql = convertPlaceholders(sql);
+
+                const result = await client.query(
+                    convertedSql,
+                    params
+                );
+
+                return {
+                    id:
+                        result.rows[0]?.id ??
+                        null,
+                    changes: result.rowCount,
+                };
+            },
+
+            async get(sql, params = []) {
+                const convertedSql = convertPlaceholders(sql);
+
+                const result = await client.query(
+                    convertedSql,
+                    params
+                );
+
+                return result.rows[0] || undefined;
+            },
+
+            async all(sql, params = []) {
+                const convertedSql = convertPlaceholders(sql);
+
+                const result = await client.query(
+                    convertedSql,
+                    params
+                );
+
+                return result.rows;
+            },
+
+            async exec(sql) {
+                const convertedSql = convertPlaceholders(sql);
+
+                await client.query(convertedSql);
+            },
+        };
+
+        const result = await callback(transactionDb);
+
+        await client.query("COMMIT");
+
+        return result;
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+export default pool;

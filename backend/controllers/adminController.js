@@ -6,38 +6,39 @@ export async function getDashboardStats(req, res) {
             SELECT
                 COUNT(*) AS total_orders,
 
-                SUM(
-                    CASE
-                        WHEN date(created_at, '+5 hours', '+30 minutes') = date('now', '+5 hours', '+30 minutes')
-                        THEN 1
-                        ELSE 0
-                    END
+                COUNT(*) FILTER (
+                    WHERE
+                        (created_at AT TIME ZONE 'Asia/Kolkata')::date
+                        =
+                        (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')::date
                 ) AS today_orders,
 
-                SUM(
-                    CASE
-                        WHEN date(created_at, '+5 hours', '+30 minutes') = date('now', '+5 hours', '+30 minutes')
-                        AND status IN ('Completed')
-                        THEN 1
-                        ELSE 0
-                    END
+                COUNT(*) FILTER (
+                    WHERE
+                        (created_at AT TIME ZONE 'Asia/Kolkata')::date
+                        =
+                        (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')::date
+                        AND status = 'Completed'
                 ) AS today_completed,
 
-                SUM(
-                    CASE
-                        WHEN date(created_at, '+5 hours', '+30 minutes') = date('now', '+5 hours', '+30 minutes')
-                        AND status IN ('Completed')
-                        THEN total
-                        ELSE 0
-                    END
+                COALESCE(
+                    SUM(total) FILTER (
+                        WHERE
+                            (created_at AT TIME ZONE 'Asia/Kolkata')::date
+                            =
+                            (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')::date
+                            AND status = 'Completed'
+                    ),
+                    0
                 ) AS today_income,
 
-                SUM(
-                    CASE
-                        WHEN status IN ('Pending', 'Confirmed', 'Preparing', 'Ready')
-                        THEN 1
-                        ELSE 0
-                    END
+                COUNT(*) FILTER (
+                    WHERE status IN (
+                        'Pending',
+                        'Confirmed',
+                        'Preparing',
+                        'Ready'
+                    )
                 ) AS pending_orders
 
             FROM orders
@@ -45,53 +46,87 @@ export async function getDashboardStats(req, res) {
 
         res.json({
             success: true,
+
             stats: {
-                todayOrders: stats.today_orders || 0,
-                todayCompleted: stats.today_completed || 0,
-                todayIncome: stats.today_income || 0,
-                pendingOrders: stats.pending_orders || 0,
-                totalOrders: stats.total_orders || 0,
+                todayOrders:
+                    Number(stats.today_orders) || 0,
+
+                todayCompleted:
+                    Number(stats.today_completed) || 0,
+
+                todayIncome:
+                    Number(stats.today_income) || 0,
+
+                pendingOrders:
+                    Number(stats.pending_orders) || 0,
+
+                totalOrders:
+                    Number(stats.total_orders) || 0,
             },
         });
     } catch (error) {
-        console.error("Dashboard stats error:", error);
+        console.error(
+            "Dashboard stats error:",
+            error
+        );
 
         res.status(500).json({
             success: false,
-            message: "Failed to fetch dashboard statistics.",
+            message:
+                "Failed to fetch dashboard statistics.",
         });
     }
 }
 
 export async function getOrderHistory(req, res) {
     try {
-        // Daily financial summary grouped by IST date
         const dailySummary = await all(`
             SELECT
-                date(created_at, '+5 hours', '+30 minutes') AS date_ist,
+                (created_at AT TIME ZONE 'Asia/Kolkata')::date
+                    AS date_ist,
+
                 COUNT(*) AS total_orders,
-                SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed_orders,
-                SUM(CASE WHEN status = 'Completed' THEN total ELSE 0 END) AS total_income
+
+                COUNT(*) FILTER (
+                    WHERE status = 'Completed'
+                ) AS completed_orders,
+
+                COALESCE(
+                    SUM(total) FILTER (
+                        WHERE status = 'Completed'
+                    ),
+                    0
+                ) AS total_income
+
             FROM orders
-            GROUP BY date_ist
+
+            GROUP BY
+                (created_at AT TIME ZONE 'Asia/Kolkata')::date
+
             ORDER BY date_ist DESC
         `);
 
         res.json({
             success: true,
+
             dailySummary: dailySummary.map((d) => ({
                 date: d.date_ist,
-                orders: d.total_orders,
-                completed: d.completed_orders,
-                income: d.total_income || 0,
+                orders: Number(d.total_orders),
+                completed:
+                    Number(d.completed_orders),
+                income: Number(d.total_income) || 0,
             })),
         });
     } catch (error) {
-        console.error("Order history error:", error);
+        console.error(
+            "Order history error:",
+            error
+        );
 
         res.status(500).json({
             success: false,
-            message: "Failed to fetch order history.",
+            message:
+                "Failed to fetch order history.",
         });
     }
 }
@@ -123,7 +158,8 @@ export async function getAdminOrders(req, res) {
                     food_name AS name,
                     price,
                     quantity,
-                    emoji
+                    emoji,
+                    image
                 FROM order_items
                 WHERE order_id = ?
                 `,
@@ -136,17 +172,20 @@ export async function getAdminOrders(req, res) {
                 customer: {
                     name: order.customer_name,
                     phone: order.phone,
-                    tableNumber: order.table_number,
-                    orderType: order.order_type,
+                    tableNumber:
+                        order.table_number,
+                    orderType:
+                        order.order_type,
                 },
 
                 items,
 
-                total: order.total,
+                total: Number(order.total),
 
                 status: order.status,
 
-                preparationTime: order.preparation_time,
+                preparationTime:
+                    order.preparation_time,
 
                 createdAt: order.created_at,
             });
@@ -157,11 +196,15 @@ export async function getAdminOrders(req, res) {
             orders: ordersWithItems,
         });
     } catch (error) {
-        console.error("Admin orders error:", error);
+        console.error(
+            "Admin orders error:",
+            error
+        );
 
         res.status(500).json({
             success: false,
-            message: "Failed to fetch admin orders.",
+            message:
+                "Failed to fetch admin orders.",
         });
     }
 }
@@ -224,15 +267,20 @@ export async function updateOrderStatus(req, res) {
 
         res.json({
             success: true,
-            message: "Order status updated successfully.",
+            message:
+                "Order status updated successfully.",
             order: updatedOrder,
         });
     } catch (error) {
-        console.error("Update order status error:", error);
+        console.error(
+            "Update order status error:",
+            error
+        );
 
         res.status(500).json({
             success: false,
-            message: "Failed to update order status.",
+            message:
+                "Failed to update order status.",
         });
     }
 }

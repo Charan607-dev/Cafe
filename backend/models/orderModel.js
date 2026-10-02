@@ -1,10 +1,13 @@
-import { run, get, all, exec } from "../database/database.js";
+import {
+    run,
+    get,
+    all,
+    withTransaction,
+} from "../database/database.js";
 
 export async function createOrder(order) {
-    try {
-        await exec("BEGIN TRANSACTION");
-
-        await run(
+    return await withTransaction(async (db) => {
+        await db.run(
             `
             INSERT INTO orders (
                 order_id,
@@ -35,7 +38,7 @@ export async function createOrder(order) {
         );
 
         for (const item of order.items) {
-            await run(
+            await db.run(
                 `
                 INSERT INTO order_items (
                     order_id,
@@ -60,13 +63,12 @@ export async function createOrder(order) {
             );
         }
 
-        await exec("COMMIT");
+        const savedOrder = await getOrderById(
+            order.orderId
+        );
 
-        return await getOrderById(order.orderId);
-    } catch (error) {
-        await exec("ROLLBACK");
-        throw error;
-    }
+        return savedOrder;
+    });
 }
 
 export async function getOrderById(orderId) {
@@ -113,7 +115,7 @@ export async function getOrderById(orderId) {
 
         items,
 
-        total: order.total,
+        total: Number(order.total),
 
         status: order.status,
 
@@ -124,11 +126,13 @@ export async function getOrderById(orderId) {
 }
 
 export async function getAllOrders() {
-    const orders = await all(`
+    const orders = await all(
+        `
         SELECT *
         FROM orders
         ORDER BY created_at DESC
-    `);
+        `
+    );
 
     const result = [];
 
@@ -151,23 +155,26 @@ export async function getAllOrders() {
         result.push({
             orderId: order.order_id,
 
-            customerId: order.customer_id || null,
+            customerId:
+                order.customer_id || null,
 
             customer: {
                 name: order.customer_name,
                 phone: order.phone,
                 tableNumber: order.table_number,
                 orderType: order.order_type,
-                deliveryLocation: order.delivery_location,
+                deliveryLocation:
+                    order.delivery_location,
             },
 
             items,
 
-            total: order.total,
+            total: Number(order.total),
 
             status: order.status,
 
-            preparationTime: order.preparation_time,
+            preparationTime:
+                order.preparation_time,
 
             createdAt: order.created_at,
         });
@@ -176,7 +183,9 @@ export async function getAllOrders() {
     return result;
 }
 
-export async function getOrdersByCustomerId(customerId) {
+export async function getOrdersByCustomerId(
+    customerId
+) {
     const orders = await all(
         `
         SELECT *
@@ -208,23 +217,26 @@ export async function getOrdersByCustomerId(customerId) {
         result.push({
             orderId: order.order_id,
 
-            customerId: order.customer_id || null,
+            customerId:
+                order.customer_id || null,
 
             customer: {
                 name: order.customer_name,
                 phone: order.phone,
                 tableNumber: order.table_number,
                 orderType: order.order_type,
-                deliveryLocation: order.delivery_location,
+                deliveryLocation:
+                    order.delivery_location,
             },
 
             items,
 
-            total: order.total,
+            total: Number(order.total),
 
             status: order.status,
 
-            preparationTime: order.preparation_time,
+            preparationTime:
+                order.preparation_time,
 
             createdAt: order.created_at,
         });
