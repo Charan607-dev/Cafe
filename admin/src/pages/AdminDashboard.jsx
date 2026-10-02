@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
     ShoppingBag,
     IndianRupee,
@@ -7,16 +7,20 @@ import {
     RefreshCw,
     LogOut,
     UtensilsCrossed,
+    History,
+    CheckCircle2,
 } from "lucide-react";
 import { API_BASE_URL } from "../config/api";
 import FoodManagement from "../components/admin/FoodManagement";
+import OrderHistory, { getISTDateKey, getTodayIST, formatISTDateTime } from "../components/admin/OrderHistory";
 
 const API_URL = API_BASE_URL;
 
 function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState("orders"); // "orders" | "foods"
+    const [activeTab, setActiveTab] = useState("orders"); // "orders" | "foods" | "history"
     const [stats, setStats] = useState({
         todayOrders: 0,
+        todayCompleted: 0,
         todayIncome: 0,
         pendingOrders: 0,
         totalOrders: 0,
@@ -26,6 +30,12 @@ function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [updatingOrder, setUpdatingOrder] = useState(null);
     const [error, setError] = useState("");
+
+    // Orders placed today in IST (Asia/Kolkata)
+    const todayOrdersList = useMemo(() => {
+        const todayKey = getTodayIST();
+        return orders.filter((order) => getISTDateKey(order.createdAt) === todayKey);
+    }, [orders]);
 
     const fetchDashboard = async () => {
         try {
@@ -100,16 +110,6 @@ function AdminDashboard() {
         }
     };
 
-    const formatDate = (date) => {
-        return new Date(date).toLocaleString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
-
     return (
         <div className="min-h-screen bg-gray-50">
 
@@ -128,25 +128,37 @@ function AdminDashboard() {
                         </h1>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
 
                         <button
                             onClick={() => setActiveTab("orders")}
                             className={`flex items-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition ${
                                 activeTab === "orders"
-                                    ? "bg-orange-500 text-white"
+                                    ? "bg-orange-500 text-white shadow-sm"
                                     : "border border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:text-orange-500"
                             }`}
                         >
                             <ClipboardList size={18} />
-                            Orders
+                            Today's Orders
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab("history")}
+                            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition ${
+                                activeTab === "history"
+                                    ? "bg-orange-500 text-white shadow-sm"
+                                    : "border border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:text-orange-500"
+                            }`}
+                        >
+                            <History size={18} />
+                            Order History
                         </button>
 
                         <button
                             onClick={() => setActiveTab("foods")}
                             className={`flex items-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition ${
                                 activeTab === "foods"
-                                    ? "bg-orange-500 text-white"
+                                    ? "bg-orange-500 text-white shadow-sm"
                                     : "border border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:text-orange-500"
                             }`}
                         >
@@ -180,26 +192,28 @@ function AdminDashboard() {
 
             <main className="mx-auto max-w-7xl px-6 py-10">
 
-                {/* TITLE */}
+                {activeTab === "foods" ? (
+                    <FoodManagement apiUrl={API_URL} />
+                ) : activeTab === "history" ? (
+                    <OrderHistory apiUrl={API_URL} allOrders={orders} />
+                ) : (
+                <>
+                {/* OVERVIEW TITLE */}
 
                 <div className="mb-8">
                     <p className="font-semibold uppercase tracking-wider text-orange-500">
-                        Overview
+                        Today's Overview (IST)
                     </p>
 
                     <h2 className="mt-2 text-3xl font-extrabold text-gray-900">
-                        Café Management
+                        Today's Café Activity
                     </h2>
 
                     <p className="mt-2 text-gray-600">
-                        Manage orders and monitor today's café activity.
+                        Live orders received today. Previous days' records are securely kept in Order History.
                     </p>
                 </div>
 
-                {activeTab === "foods" ? (
-                    <FoodManagement apiUrl={API_URL} />
-                ) : (
-                <>
                 {/* ERROR */}
 
                 {error && (
@@ -222,6 +236,9 @@ function AdminDashboard() {
                                 <p className="mt-2 text-3xl font-extrabold text-gray-900">
                                     {stats.todayOrders}
                                 </p>
+                                <p className="mt-1 text-xs text-gray-400">
+                                    Orders placed today
+                                </p>
                             </div>
 
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-500">
@@ -238,12 +255,36 @@ function AdminDashboard() {
                                 </p>
 
                                 <p className="mt-2 text-3xl font-extrabold text-gray-900">
-                                    ₹{stats.todayIncome}
+                                    ₹{stats.todayIncome.toLocaleString("en-IN")}
+                                </p>
+                                <p className="mt-1 text-xs text-gray-400">
+                                    Completed orders today
                                 </p>
                             </div>
 
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-600">
                                 <IndianRupee size={23} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-semibold text-gray-500">
+                                    Today's Completed
+                                </p>
+
+                                <p className="mt-2 text-3xl font-extrabold text-gray-900">
+                                    {stats.todayCompleted}
+                                </p>
+                                <p className="mt-1 text-xs text-gray-400">
+                                    Fulfilled today
+                                </p>
+                            </div>
+
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                                <CheckCircle2 size={23} />
                             </div>
                         </div>
                     </div>
@@ -258,6 +299,9 @@ function AdminDashboard() {
                                 <p className="mt-2 text-3xl font-extrabold text-gray-900">
                                     {stats.pendingOrders}
                                 </p>
+                                <p className="mt-1 text-xs text-gray-400">
+                                    Awaiting completion
+                                </p>
                             </div>
 
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-100 text-yellow-600">
@@ -266,27 +310,9 @@ function AdminDashboard() {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-gray-500">
-                                    Total Orders
-                                </p>
-
-                                <p className="mt-2 text-3xl font-extrabold text-gray-900">
-                                    {stats.totalOrders}
-                                </p>
-                            </div>
-
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-                                <ClipboardList size={23} />
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
 
-                {/* ORDERS */}
+                {/* TODAY'S ORDERS TABLE */}
 
                 <div className="mt-10 rounded-2xl border border-gray-100 bg-white shadow-sm">
 
@@ -294,16 +320,16 @@ function AdminDashboard() {
 
                         <div>
                             <h2 className="text-xl font-bold text-gray-900">
-                                Recent Orders
+                                Today's Orders
                             </h2>
 
                             <p className="mt-1 text-sm text-gray-500">
-                                Orders received from the customer website.
+                                Live orders received today in Indian Standard Time (IST).
                             </p>
                         </div>
 
                         <span className="rounded-full bg-orange-50 px-4 py-2 text-sm font-bold text-orange-500">
-                            {orders.length} Orders
+                            {todayOrdersList.length} Order{todayOrdersList.length === 1 ? "" : "s"} Today
                         </span>
 
                     </div>
@@ -319,7 +345,7 @@ function AdminDashboard() {
                                 Loading orders...
                             </p>
                         </div>
-                    ) : orders.length === 0 ? (
+                    ) : todayOrdersList.length === 0 ? (
                         <div className="p-12 text-center">
                             <ShoppingBag
                                 size={40}
@@ -327,11 +353,11 @@ function AdminDashboard() {
                             />
 
                             <h3 className="mt-4 text-lg font-bold text-gray-900">
-                                No orders yet
+                                No orders received today
                             </h3>
 
                             <p className="mt-2 text-gray-500">
-                                Customer orders will appear here.
+                                New orders placed by customers will appear here automatically.
                             </p>
                         </div>
                     ) : (
@@ -373,7 +399,7 @@ function AdminDashboard() {
 
                                 <tbody className="divide-y divide-gray-100">
 
-                                    {orders.map((order) => (
+                                    {todayOrdersList.map((order) => (
                                         <tr
                                             key={order.orderId}
                                             className="transition hover:bg-gray-50"
@@ -460,9 +486,7 @@ function AdminDashboard() {
                                             </td>
 
                                             <td className="whitespace-nowrap px-6 py-5 text-sm text-gray-500">
-                                                {formatDate(
-                                                    order.createdAt
-                                                )}
+                                                {formatISTDateTime(order.createdAt)}
                                             </td>
 
                                         </tr>

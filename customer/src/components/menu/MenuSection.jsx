@@ -23,21 +23,31 @@ function MenuSection({
 }) {
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All");
-    const [foods, setFoods] = useState(defaultFoods);
+    const [foods, setFoods] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         async function loadFoods() {
             try {
+                setLoading(true);
+                setError(false);
                 const response = await fetch(`${API_BASE_URL}/api/foods`);
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.foods && data.foods.length > 0) {
+                    if (data.foods) {
                         setFoods(data.foods);
+                    } else {
+                        setFoods([]);
                     }
+                } else {
+                    setError(true);
                 }
             } catch (err) {
-                // API unreachable — keep default hardcoded foods
-                console.warn("Could not fetch foods from API, using defaults.", err);
+                console.warn("Could not fetch foods from API:", err);
+                setError(true);
+            } finally {
+                setLoading(false);
             }
         }
         loadFoods();
@@ -119,108 +129,121 @@ function MenuSection({
                     ))}
                 </div>
 
-                {/* Food Cards */}
-                <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {filteredFoods.map((food) => {
-                        const quantity = getQuantity(food.id);
-
-                        return (
-                            <div
-                                key={food.id}
-                                className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-                            >
-
-                                {/* Food Image */}
-                                {food.image ? (
-                                    <div className="h-48 bg-orange-50">
-                                        <img
-                                            src={food.image.startsWith("http") || food.image.startsWith("data:") ? food.image : `${API_BASE_URL}${food.image}`}
-                                            alt={food.name}
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="flex h-48 items-center justify-center bg-orange-50 text-7xl">
-                                        {food.emoji}
-                                    </div>
-                                )}
-
-                                <div className="p-5">
-
-                                    {/* Name + Price */}
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-gray-900">
-                                                {food.name}
-                                            </h3>
-
-                                            <p className="mt-1 text-sm text-orange-500">
-                                                {food.category}
-                                            </p>
-                                        </div>
-
-                                        <span className="font-bold text-gray-900">
-                                            ₹{food.price}
-                                        </span>
-                                    </div>
-
-                                    {/* Description */}
-                                    <p className="mt-3 text-sm leading-6 text-gray-600">
-                                        {food.description}
-                                    </p>
-
-                                    {/* Add / Quantity Controls */}
-                                    {quantity === 0 ? (
-                                        <button
-                                            onClick={() => onAddToCart(food)}
-                                            className="mt-5 w-full rounded-xl bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600"
-                                        >
-                                            + Add to Cart
-                                        </button>
-                                    ) : (
-                                        <div className="mt-5 flex items-center justify-between rounded-xl bg-orange-500 px-3 py-2 text-white">
-
-                                            <button
-                                                onClick={() =>
-                                                    onDecrease(food.id)
-                                                }
-                                                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-orange-500 transition hover:bg-orange-50"
-                                            >
-                                                <Minus size={18} />
-                                            </button>
-
-                                            <span className="text-lg font-bold">
-                                                {quantity}
-                                            </span>
-
-                                            <button
-                                                onClick={() =>
-                                                    onIncrease(food.id)
-                                                }
-                                                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-orange-500 transition hover:bg-orange-50"
-                                            >
-                                                <Plus size={18} />
-                                            </button>
-
-                                        </div>
-                                    )}
-
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* No Results */}
-                {filteredFoods.length === 0 && (
-                    <div className="mt-10 rounded-2xl bg-white p-12 text-center">
+                {/* Content States */}
+                {loading ? (
+                    <div className="mt-12 flex items-center justify-center p-12">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+                    </div>
+                ) : error ? (
+                    <div className="mt-10 rounded-2xl bg-white p-12 text-center shadow-sm">
+                        <p className="text-lg font-semibold text-red-500">
+                            Failed to load food menu.
+                        </p>
+                        <p className="mt-2 text-sm text-gray-500">
+                            Please check your connection and try refreshing the page.
+                        </p>
+                    </div>
+                ) : foods.length === 0 ? (
+                    <div className="mt-10 rounded-2xl bg-white p-12 text-center shadow-sm">
+                        <p className="text-lg font-semibold text-gray-800">
+                            No food items available right now.
+                        </p>
+                    </div>
+                ) : filteredFoods.length === 0 ? (
+                    <div className="mt-10 rounded-2xl bg-white p-12 text-center shadow-sm">
                         <p className="text-lg font-semibold text-gray-900">
                             No food found.
                         </p>
-
                         <p className="mt-2 text-gray-500">
                             Try a different search or category.
                         </p>
+                    </div>
+                ) : (
+                    /* Food Cards */
+                    <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {filteredFoods.map((food) => {
+                            const quantity = getQuantity(food.id);
+
+                            return (
+                                <div
+                                    key={food.id}
+                                    className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                                >
+                                    {/* Food Image */}
+                                    {food.image ? (
+                                        <div className="h-48 bg-orange-50">
+                                            <img
+                                                src={food.image.startsWith("http") || food.image.startsWith("data:") ? food.image : `${API_BASE_URL}${food.image}`}
+                                                alt={food.name}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex h-48 items-center justify-center bg-orange-50 text-7xl">
+                                            {food.emoji || "🍽️"}
+                                        </div>
+                                    )}
+
+                                    <div className="p-5">
+                                        {/* Name + Price */}
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <h3 className="text-lg font-bold text-gray-900">
+                                                    {food.name}
+                                                </h3>
+
+                                                <p className="mt-1 text-sm text-orange-500">
+                                                    {food.category}
+                                                </p>
+                                            </div>
+
+                                            <span className="font-bold text-gray-900">
+                                                ₹{food.price}
+                                            </span>
+                                        </div>
+
+                                        {/* Description */}
+                                        <p className="mt-3 text-sm leading-6 text-gray-600">
+                                            {food.description}
+                                        </p>
+
+                                        {/* Add / Quantity Controls */}
+                                        {quantity === 0 ? (
+                                            <button
+                                                onClick={() => onAddToCart(food)}
+                                                className="mt-5 w-full rounded-xl bg-orange-500 py-3 font-semibold text-white transition hover:bg-orange-600"
+                                            >
+                                                + Add to Cart
+                                            </button>
+                                        ) : (
+                                            <div className="mt-5 flex items-center justify-between rounded-xl bg-orange-500 px-3 py-2 text-white">
+                                                <button
+                                                    onClick={() =>
+                                                        onDecrease(food.id)
+                                                    }
+                                                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-orange-500 transition hover:bg-orange-50"
+                                                >
+                                                    <Minus size={18} />
+                                                </button>
+
+                                                <span className="text-lg font-bold">
+                                                    {quantity}
+                                                </span>
+
+                                                <button
+                                                    onClick={() =>
+                                                        onIncrease(food.id)
+                                                    }
+                                                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-orange-500 transition hover:bg-orange-50"
+                                                >
+                                                    <Plus size={18} />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 

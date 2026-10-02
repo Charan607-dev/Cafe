@@ -43,9 +43,10 @@ export async function createOrder(order) {
                     food_name,
                     price,
                     quantity,
-                    emoji
+                    emoji,
+                    image
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
                     order.orderId,
@@ -54,6 +55,7 @@ export async function createOrder(order) {
                     item.price,
                     item.quantity,
                     item.emoji || "",
+                    item.image || null,
                 ]
             );
         }
@@ -88,7 +90,8 @@ export async function getOrderById(orderId) {
             food_name AS name,
             price,
             quantity,
-            emoji
+            emoji,
+            image
         FROM order_items
         WHERE order_id = ?
         `,
@@ -137,7 +140,8 @@ export async function getAllOrders() {
                 food_name AS name,
                 price,
                 quantity,
-                emoji
+                emoji,
+                image
             FROM order_items
             WHERE order_id = ?
             `,
@@ -193,7 +197,8 @@ export async function getOrdersByCustomerId(customerId) {
                 food_name AS name,
                 price,
                 quantity,
-                emoji
+                emoji,
+                image
             FROM order_items
             WHERE order_id = ?
             `,

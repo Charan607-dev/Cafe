@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { UtensilsCrossed, Trash2, RefreshCw, LoaderCircle } from "lucide-react";
+import { UtensilsCrossed, Trash2, Edit2, RefreshCw, LoaderCircle } from "lucide-react";
 import AddFoodForm from "./AddFoodForm";
 
 function FoodManagement({ apiUrl }) {
     const [foods, setFoods] = useState([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState(null);
+    const [editingFood, setEditingFood] = useState(null);
     const [error, setError] = useState("");
 
     const fetchFoods = async () => {
@@ -34,6 +35,22 @@ function FoodManagement({ apiUrl }) {
         setFoods((prev) => [...prev, newFood]);
     };
 
+    const handleFoodUpdated = (updatedFood) => {
+        setFoods((prev) =>
+            prev.map((f) => (f.id === updatedFood.id ? updatedFood : f))
+        );
+        setEditingFood(null);
+    };
+
+    const handleStartEdit = (food) => {
+        setEditingFood(food);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingFood(null);
+    };
+
     const handleDeleteFood = async (id) => {
         if (!window.confirm("Are you sure you want to delete this food item?")) {
             return;
@@ -51,6 +68,9 @@ function FoodManagement({ apiUrl }) {
             }
 
             setFoods((prev) => prev.filter((food) => food.id !== id));
+            if (editingFood && editingFood.id === id) {
+                setEditingFood(null);
+            }
         } catch (err) {
             console.error("Delete food error:", err);
             alert(err.message || "Could not delete food item.");
@@ -73,7 +93,7 @@ function FoodManagement({ apiUrl }) {
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900">Food Menu Management</h2>
                     <p className="mt-1 text-sm text-gray-500">
-                        Add, view, and remove food items available on the customer menu.
+                        Add, view, edit, and remove food items available on the customer menu.
                     </p>
                 </div>
 
@@ -93,9 +113,15 @@ function FoodManagement({ apiUrl }) {
             )}
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-                {/* Left column: Add Food Form */}
+                {/* Left column: Add/Edit Food Form */}
                 <div className="lg:col-span-1">
-                    <AddFoodForm onFoodAdded={handleFoodAdded} apiUrl={apiUrl} />
+                    <AddFoodForm
+                        onFoodAdded={handleFoodAdded}
+                        onFoodUpdated={handleFoodUpdated}
+                        editingFood={editingFood}
+                        onCancelEdit={handleCancelEdit}
+                        apiUrl={apiUrl}
+                    />
                 </div>
 
                 {/* Right column: Food List */}
@@ -130,14 +156,19 @@ function FoodManagement({ apiUrl }) {
                                             <th className="px-5 py-3.5">Category</th>
                                             <th className="px-5 py-3.5">Price</th>
                                             <th className="px-5 py-3.5">Description</th>
-                                            <th className="px-5 py-3.5 text-right">Action</th>
+                                            <th className="px-5 py-3.5 text-right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {foods.map((food) => {
                                             const fullImg = resolveImageUrl(food.image);
+                                            const isCurrentlyEditing = editingFood?.id === food.id;
+
                                             return (
-                                                <tr key={food.id} className="transition hover:bg-gray-50">
+                                                <tr
+                                                    key={food.id}
+                                                    className={`transition hover:bg-gray-50 ${isCurrentlyEditing ? "bg-orange-50/50" : ""}`}
+                                                >
                                                     <td className="px-5 py-4">
                                                         <div className="flex items-center gap-3">
                                                             {fullImg ? (
@@ -167,19 +198,29 @@ function FoodManagement({ apiUrl }) {
                                                     <td className="max-w-xs px-5 py-4 text-xs text-gray-500">
                                                         {food.description || "—"}
                                                     </td>
-                                                    <td className="px-5 py-4 text-right">
-                                                        <button
-                                                            onClick={() => handleDeleteFood(food.id)}
-                                                            disabled={deletingId === food.id}
-                                                            className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
-                                                            title="Delete food item"
-                                                        >
-                                                            {deletingId === food.id ? (
-                                                                <LoaderCircle size={18} className="animate-spin" />
-                                                            ) : (
-                                                                <Trash2 size={18} />
-                                                            )}
-                                                        </button>
+                                                    <td className="whitespace-nowrap px-5 py-4 text-right">
+                                                        <div className="flex items-center justify-end gap-1">
+                                                            <button
+                                                                onClick={() => handleStartEdit(food)}
+                                                                className={`rounded-lg p-2 transition ${isCurrentlyEditing ? "bg-orange-500 text-white" : "text-gray-400 hover:bg-orange-50 hover:text-orange-500"}`}
+                                                                title="Edit food item"
+                                                            >
+                                                                <Edit2 size={17} />
+                                                            </button>
+
+                                                            <button
+                                                                onClick={() => handleDeleteFood(food.id)}
+                                                                disabled={deletingId === food.id}
+                                                                className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                                                                title="Delete food item"
+                                                            >
+                                                                {deletingId === food.id ? (
+                                                                    <LoaderCircle size={17} className="animate-spin" />
+                                                                ) : (
+                                                                    <Trash2 size={17} />
+                                                                )}
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );

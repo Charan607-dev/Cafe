@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../../config/api";
+
 function OrderSummary({ cart, total }) {
     return (
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -12,9 +14,23 @@ function OrderSummary({ cart, total }) {
                         className="flex items-center justify-between gap-4"
                     >
                         <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-50 text-2xl">
-                                {item.emoji}
-                            </div>
+                            {item.image ? (
+                                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-orange-50">
+                                    <img
+                                        src={
+                                            item.image.startsWith("http") || item.image.startsWith("data:")
+                                                ? item.image
+                                                : `${API_BASE_URL}${item.image}`
+                                        }
+                                        alt={item.name}
+                                        className="h-full w-full object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-2xl">
+                                    {item.emoji || "🍽️"}
+                                </div>
+                            )}
 
                             <div>
                                 <p className="font-semibold text-gray-900">

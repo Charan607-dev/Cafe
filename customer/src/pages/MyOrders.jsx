@@ -114,9 +114,23 @@ function MyOrderCard({ order }) {
                                 className="flex items-center justify-between gap-3"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-50 text-xl">
-                                        {item.emoji}
-                                    </div>
+                                    {item.image ? (
+                                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-orange-50">
+                                            <img
+                                                src={
+                                                    item.image.startsWith("http") || item.image.startsWith("data:")
+                                                        ? item.image
+                                                        : `${API_BASE_URL}${item.image}`
+                                                }
+                                                alt={item.name}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-xl">
+                                            {item.emoji || "🍽️"}
+                                        </div>
+                                    )}
                                     <div>
                                         <p className="font-semibold text-gray-900">
                                             {item.name}

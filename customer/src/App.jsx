@@ -96,6 +96,7 @@ function CustomerApp() {
                 price: item.price,
                 quantity: item.quantity,
                 emoji: item.emoji || "",
+                image: item.image || null,
             })),
 
             total,

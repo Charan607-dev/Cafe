@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
-import { PlusCircle, Upload, X, LoaderCircle } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { PlusCircle, Edit3, Upload, X, LoaderCircle } from "lucide-react";
 
 const CATEGORIES = ["Burgers", "Pizza", "Meals", "Drinks", "Desserts"];
 
-function AddFoodForm({ onFoodAdded, apiUrl }) {
+function AddFoodForm({ onFoodAdded, onFoodUpdated, editingFood, onCancelEdit, apiUrl }) {
     const [name, setName] = useState("");
     const [category, setCategory] = useState("Burgers");
     const [price, setPrice] = useState("");
@@ -15,6 +15,45 @@ function AddFoodForm({ onFoodAdded, apiUrl }) {
     const [success, setSuccess] = useState("");
 
     const fileInputRef = useRef(null);
+
+    // Sync form values when editingFood changes
+    useEffect(() => {
+        if (editingFood) {
+            setName(editingFood.name || "");
+            setCategory(editingFood.category || "Burgers");
+            setPrice(editingFood.price?.toString() || "");
+            setDescription(editingFood.description || "");
+
+            if (editingFood.image) {
+                const fullImg =
+                    editingFood.image.startsWith("http://") ||
+                    editingFood.image.startsWith("https://") ||
+                    editingFood.image.startsWith("data:")
+                        ? editingFood.image
+                        : `${apiUrl}${editingFood.image}`;
+                setImagePreview(fullImg);
+            } else {
+                setImagePreview(null);
+            }
+            setImageBase64(""); // only set if user picks a new file
+            setError("");
+            setSuccess("");
+        } else {
+            resetForm();
+        }
+    }, [editingFood, apiUrl]);
+
+    const resetForm = () => {
+        setName("");
+        setCategory("Burgers");
+        setPrice("");
+        setDescription("");
+        setImagePreview(null);
+        setImageBase64("");
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
 
     const handleImageChange = (e) => {
         const file = e.target.files?.[0];
@@ -41,7 +80,7 @@ function AddFoodForm({ onFoodAdded, apiUrl }) {
 
     const handleRemoveImage = () => {
         setImagePreview(null);
-        setImageBase64("");
+        setImageBase64(editingFood ? "" : "");
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -62,40 +101,60 @@ function AddFoodForm({ onFoodAdded, apiUrl }) {
             return;
         }
 
+        const isEditing = Boolean(editingFood);
+
         try {
             setSubmitting(true);
-            const response = await fetch(`${apiUrl}/api/foods`, {
-                method: "POST",
+
+            const payload = {
+                name: name.trim(),
+                category,
+                price: Number(price),
+                description: description.trim(),
+            };
+
+            // Image logic:
+            if (imageBase64) {
+                payload.image = imageBase64;
+            } else if (isEditing && !imagePreview) {
+                // Image was explicitly removed
+                payload.image = null;
+            }
+
+            const url = isEditing
+                ? `${apiUrl}/api/foods/${editingFood.id}`
+                : `${apiUrl}/api/foods`;
+
+            const method = isEditing ? "PUT" : "POST";
+
+            const response = await fetch(url, {
+                method,
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    name: name.trim(),
-                    category,
-                    price: Number(price),
-                    description: description.trim(),
-                    image: imageBase64 || null,
-                }),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.message || "Failed to add food item.");
+                throw new Error(data.message || `Failed to ${isEditing ? "update" : "add"} food item.`);
             }
 
-            setSuccess("Food item added successfully!");
-            setName("");
-            setCategory("Burgers");
-            setPrice("");
-            setDescription("");
-            handleRemoveImage();
+            setSuccess(`Food item ${isEditing ? "updated" : "added"} successfully!`);
 
-            if (onFoodAdded) {
-                onFoodAdded(data.food);
+            if (isEditing) {
+                if (onFoodUpdated) {
+                    onFoodUpdated(data.food);
+                }
+            } else {
+                resetForm();
+                if (onFoodAdded) {
+                    onFoodAdded(data.food);
+                }
             }
         } catch (err) {
-            console.error("Add food error:", err);
-            setError(err.message || "Failed to add food item.");
+            console.error("Save food error:", err);
+            setError(err.message || "Failed to save food item.");
         } finally {
             setSubmitting(false);
         }
@@ -103,9 +162,27 @@ function AddFoodForm({ onFoodAdded, apiUrl }) {
 
     return (
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
-                <PlusCircle className="text-orange-500" size={22} />
-                <h3 className="text-lg font-bold text-gray-900">Add New Food Item</h3>
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                <div className="flex items-center gap-2">
+                    {editingFood ? (
+                        <Edit3 className="text-orange-500" size={22} />
+                    ) : (
+                        <PlusCircle className="text-orange-500" size={22} />
+                    )}
+                    <h3 className="text-lg font-bold text-gray-900">
+                        {editingFood ? "Edit Food Item" : "Add New Food Item"}
+                    </h3>
+                </div>
+
+                {editingFood && (
+                    <button
+                        type="button"
+                        onClick={onCancelEdit}
+                        className="rounded-lg px-2.5 py-1 text-xs font-semibold text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                    >
+                        Cancel
+                    </button>
+                )}
             </div>
 
             {error && (
@@ -203,6 +280,7 @@ function AddFoodForm({ onFoodAdded, apiUrl }) {
                                 type="button"
                                 onClick={handleRemoveImage}
                                 className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900/70 text-white hover:bg-gray-900"
+                                title="Remove image"
                             >
                                 <X size={14} />
                             </button>
@@ -229,21 +307,32 @@ function AddFoodForm({ onFoodAdded, apiUrl }) {
                     />
                 </div>
 
-                {/* Submit Button */}
-                <button
-                    type="submit"
-                    disabled={submitting}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-bold text-white shadow-md transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-orange-300"
-                >
-                    {submitting ? (
-                        <>
-                            <LoaderCircle size={18} className="animate-spin" />
-                            Adding Food...
-                        </>
-                    ) : (
-                        "Add Food to Menu"
+                {/* Submit & Cancel Buttons */}
+                <div className="flex gap-3">
+                    {editingFood && (
+                        <button
+                            type="button"
+                            onClick={onCancelEdit}
+                            className="flex-1 rounded-xl border border-gray-200 py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
                     )}
-                </button>
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-bold text-white shadow-md transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-orange-300"
+                    >
+                        {submitting ? (
+                            <>
+                                <LoaderCircle size={18} className="animate-spin" />
+                                {editingFood ? "Saving..." : "Adding..."}
+                            </>
+                        ) : (
+                            editingFood ? "Save Changes" : "Add Food to Menu"
+                        )}
+                    </button>
+                </div>
             </form>
         </div>
     );

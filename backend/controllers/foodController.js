@@ -5,6 +5,7 @@ import {
     createFood,
     getAllFoods,
     getFoodById,
+    updateFoodById,
     deleteFoodById,
 } from "../models/foodModel.js";
 
@@ -117,6 +118,110 @@ export async function addFood(req, res) {
         res.status(500).json({
             success: false,
             message: "Failed to add food item.",
+            error: error.message,
+        });
+    }
+}
+
+export async function editFood(req, res) {
+    try {
+        const { id } = req.params;
+        const existingFood = await getFoodById(id);
+
+        if (!existingFood) {
+            return res.status(404).json({
+                success: false,
+                message: "Food item not found.",
+            });
+        }
+
+        const { name, category, price, description, emoji, image } = req.body;
+
+        if (name !== undefined && !name.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Food name cannot be empty.",
+            });
+        }
+
+        if (category !== undefined && !category.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Category cannot be empty.",
+            });
+        }
+
+        if (price !== undefined && (price === null || isNaN(Number(price)) || Number(price) <= 0)) {
+            return res.status(400).json({
+                success: false,
+                message: "A valid positive price is required.",
+            });
+        }
+
+        let imageUrl = existingFood.image;
+
+        // If new base64 image is uploaded
+        if (image && typeof image === "string" && image.startsWith("data:image/")) {
+            const matches = image.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+            if (matches) {
+                const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
+                const base64Data = matches[2];
+                const filename = `food_${Date.now()}_${Math.floor(Math.random() * 10000)}.${ext}`;
+                const filepath = path.join(uploadDir, filename);
+
+                fs.writeFileSync(filepath, Buffer.from(base64Data, "base64"));
+                imageUrl = `/uploads/foods/${filename}`;
+
+                // Clean up previous image file if it was a local uploaded file
+                if (existingFood.image && existingFood.image.startsWith("/uploads/foods/")) {
+                    const oldPath = path.join(uploadDir, path.basename(existingFood.image));
+                    if (fs.existsSync(oldPath)) {
+                        try {
+                            fs.unlinkSync(oldPath);
+                        } catch (e) {
+                            console.error("Error removing old food image:", e);
+                        }
+                    }
+                }
+            }
+        } else if (image === null || image === "") {
+            // Remove image if explicitly cleared
+            if (existingFood.image && existingFood.image.startsWith("/uploads/foods/")) {
+                const oldPath = path.join(uploadDir, path.basename(existingFood.image));
+                if (fs.existsSync(oldPath)) {
+                    try {
+                        fs.unlinkSync(oldPath);
+                    } catch (e) {
+                        console.error("Error removing old food image:", e);
+                    }
+                }
+            }
+            imageUrl = null;
+        } else if (image !== undefined) {
+            imageUrl = image;
+        }
+
+        const foodEmoji = emoji || (category ? getCategoryEmoji(category) : existingFood.emoji);
+
+        const updated = await updateFoodById(id, {
+            name: name !== undefined ? name.trim() : undefined,
+            category: category !== undefined ? category.trim() : undefined,
+            price: price !== undefined ? Number(price) : undefined,
+            emoji: foodEmoji,
+            description: description !== undefined ? description.trim() : undefined,
+            image: imageUrl,
+        });
+
+        res.json({
+            success: true,
+            message: "Food item updated successfully.",
+            food: updated,
+        });
+    } catch (error) {
+        console.error("Edit food error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to update food item.",
             error: error.message,
         });
     }

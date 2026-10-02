@@ -1,4 +1,5 @@
 import { Minus, Plus, Trash2, X } from "lucide-react";
+import { API_BASE_URL } from "../../config/api";
 
 function CartDrawer({
     open,
@@ -58,9 +59,23 @@ function CartDrawer({
                             >
                                 <div className="flex gap-4">
                                     {/* Food Image / Emoji */}
-                                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-3xl">
-                                        {item.emoji}
-                                    </div>
+                                    {item.image ? (
+                                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-orange-50">
+                                            <img
+                                                src={
+                                                    item.image.startsWith("http") || item.image.startsWith("data:")
+                                                        ? item.image
+                                                        : `${API_BASE_URL}${item.image}`
+                                                }
+                                                alt={item.name}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-3xl">
+                                            {item.emoji || "🍽️"}
+                                        </div>
+                                    )}
 
                                     <div className="flex-1">
                                         <div className="flex justify-between gap-3">

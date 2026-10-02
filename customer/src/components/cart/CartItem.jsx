@@ -1,4 +1,5 @@
 import { Minus, Plus, Trash2 } from "lucide-react";
+import { API_BASE_URL } from "../../config/api";
 
 function CartItem({
     item,
@@ -9,9 +10,23 @@ function CartItem({
     return (
         <div className="flex gap-4 border-b border-gray-100 py-5">
 
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-3xl">
-                {item.emoji}
-            </div>
+            {item.image ? (
+                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-orange-50">
+                    <img
+                        src={
+                            item.image.startsWith("http") || item.image.startsWith("data:")
+                                ? item.image
+                                : `${API_BASE_URL}${item.image}`
+                        }
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                    />
+                </div>
+            ) : (
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-3xl">
+                    {item.emoji || "🍽️"}
+                </div>
+            )}
 
             <div className="min-w-0 flex-1">
                 <div className="flex justify-between gap-3">

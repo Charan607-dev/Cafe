@@ -26,6 +26,7 @@ const createOrderItemsTable = `
         price REAL NOT NULL,
         quantity INTEGER NOT NULL,
         emoji TEXT,
+        image TEXT,
         FOREIGN KEY (order_id) REFERENCES orders(order_id)
     )
 `;
@@ -136,6 +137,15 @@ export async function initializeDatabase() {
         try {
             await exec(
                 `ALTER TABLE orders ADD COLUMN customer_id TEXT`
+            );
+        } catch (error) {
+            // Column already exists — safe to ignore
+        }
+
+        // Migration: add image column to order_items for existing databases
+        try {
+            await exec(
+                `ALTER TABLE order_items ADD COLUMN image TEXT`
             );
         } catch (error) {
             // Column already exists — safe to ignore
