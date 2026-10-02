@@ -6,12 +6,15 @@ import {
     ClipboardList,
     RefreshCw,
     LogOut,
+    UtensilsCrossed,
 } from "lucide-react";
 import { API_BASE_URL } from "../config/api";
+import FoodManagement from "../components/admin/FoodManagement";
 
 const API_URL = API_BASE_URL;
 
 function AdminDashboard() {
+    const [activeTab, setActiveTab] = useState("orders"); // "orders" | "foods"
     const [stats, setStats] = useState({
         todayOrders: 0,
         todayIncome: 0,
@@ -128,6 +131,30 @@ function AdminDashboard() {
                     <div className="flex items-center gap-3">
 
                         <button
+                            onClick={() => setActiveTab("orders")}
+                            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition ${
+                                activeTab === "orders"
+                                    ? "bg-orange-500 text-white"
+                                    : "border border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:text-orange-500"
+                            }`}
+                        >
+                            <ClipboardList size={18} />
+                            Orders
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab("foods")}
+                            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition ${
+                                activeTab === "foods"
+                                    ? "bg-orange-500 text-white"
+                                    : "border border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:text-orange-500"
+                            }`}
+                        >
+                            <UtensilsCrossed size={18} />
+                            Food Menu
+                        </button>
+
+                        <button
                             onClick={fetchDashboard}
                             className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-semibold text-gray-700 transition hover:border-orange-300 hover:text-orange-500"
                         >
@@ -169,6 +196,10 @@ function AdminDashboard() {
                     </p>
                 </div>
 
+                {activeTab === "foods" ? (
+                    <FoodManagement apiUrl={API_URL} />
+                ) : (
+                <>
                 {/* ERROR */}
 
                 {error && (
@@ -445,6 +476,8 @@ function AdminDashboard() {
                     )}
 
                 </div>
+                </>
+                )}
 
             </main>
         </div>

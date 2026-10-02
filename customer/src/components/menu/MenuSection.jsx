@@ -1,5 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Minus, Plus } from "lucide-react";
+import { API_BASE_URL } from "../../config/api";
+
+const defaultFoods = [
+    { id: 1, name: "Classic Burger", category: "Burgers", price: 99, emoji: "🍔", description: "Juicy burger with fresh vegetables and special sauce." },
+    { id: 2, name: "Cheese Burger", category: "Burgers", price: 119, emoji: "🍔", description: "Classic burger loaded with melted cheese." },
+    { id: 3, name: "Margherita Pizza", category: "Pizza", price: 149, emoji: "🍕", description: "Classic pizza topped with cheese and tomato." },
+    { id: 4, name: "Paneer Pizza", category: "Pizza", price: 179, emoji: "🍕", description: "Delicious pizza topped with spicy paneer." },
+    { id: 5, name: "Veg Fried Rice", category: "Meals", price: 110, emoji: "🍚", description: "Flavorful fried rice with fresh vegetables." },
+    { id: 6, name: "Chicken Rice", category: "Meals", price: 140, emoji: "🍗", description: "Tasty chicken rice prepared with aromatic spices." },
+    { id: 7, name: "Cold Coffee", category: "Drinks", price: 70, emoji: "🥤", description: "Refreshing chilled coffee with a creamy finish." },
+    { id: 8, name: "Fresh Lime Soda", category: "Drinks", price: 50, emoji: "🍋", description: "Refreshing lime soda perfect for a hot day." },
+    { id: 9, name: "Chocolate Brownie", category: "Desserts", price: 80, emoji: "🍫", description: "Soft and rich chocolate brownie." },
+    { id: 10, name: "Ice Cream", category: "Desserts", price: 60, emoji: "🍨", description: "Creamy and delicious ice cream." },
+];
 
 function MenuSection({
     onAddToCart,
@@ -9,98 +23,30 @@ function MenuSection({
 }) {
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All");
+    const [foods, setFoods] = useState(defaultFoods);
 
-    const foods = [
-        {
-            id: 1,
-            name: "Classic Burger",
-            category: "Burgers",
-            price: 99,
-            emoji: "🍔",
-            description: "Juicy burger with fresh vegetables and special sauce.",
-        },
-        {
-            id: 2,
-            name: "Cheese Burger",
-            category: "Burgers",
-            price: 119,
-            emoji: "🍔",
-            description: "Classic burger loaded with melted cheese.",
-        },
-        {
-            id: 3,
-            name: "Margherita Pizza",
-            category: "Pizza",
-            price: 149,
-            emoji: "🍕",
-            description: "Classic pizza topped with cheese and tomato.",
-        },
-        {
-            id: 4,
-            name: "Paneer Pizza",
-            category: "Pizza",
-            price: 179,
-            emoji: "🍕",
-            description: "Delicious pizza topped with spicy paneer.",
-        },
-        {
-            id: 5,
-            name: "Veg Fried Rice",
-            category: "Meals",
-            price: 110,
-            emoji: "🍚",
-            description: "Flavorful fried rice with fresh vegetables.",
-        },
-        {
-            id: 6,
-            name: "Chicken Rice",
-            category: "Meals",
-            price: 140,
-            emoji: "🍗",
-            description: "Tasty chicken rice prepared with aromatic spices.",
-        },
-        {
-            id: 7,
-            name: "Cold Coffee",
-            category: "Drinks",
-            price: 70,
-            emoji: "🥤",
-            description: "Refreshing chilled coffee with a creamy finish.",
-        },
-        {
-            id: 8,
-            name: "Fresh Lime Soda",
-            category: "Drinks",
-            price: 50,
-            emoji: "🍋",
-            description: "Refreshing lime soda perfect for a hot day.",
-        },
-        {
-            id: 9,
-            name: "Chocolate Brownie",
-            category: "Desserts",
-            price: 80,
-            emoji: "🍫",
-            description: "Soft and rich chocolate brownie.",
-        },
-        {
-            id: 10,
-            name: "Ice Cream",
-            category: "Desserts",
-            price: 60,
-            emoji: "🍨",
-            description: "Creamy and delicious ice cream.",
-        },
-    ];
+    useEffect(() => {
+        async function loadFoods() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/foods`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.foods && data.foods.length > 0) {
+                        setFoods(data.foods);
+                    }
+                }
+            } catch (err) {
+                // API unreachable — keep default hardcoded foods
+                console.warn("Could not fetch foods from API, using defaults.", err);
+            }
+        }
+        loadFoods();
+    }, []);
 
-    const categories = [
-        "All",
-        "Pizza",
-        "Burgers",
-        "Meals",
-        "Drinks",
-        "Desserts",
-    ];
+    const categories = useMemo(() => {
+        const cats = [...new Set(foods.map((f) => f.category))];
+        return ["All", ...cats];
+    }, [foods]);
 
     const filteredFoods = useMemo(() => {
         return foods.filter((food) => {
@@ -113,7 +59,7 @@ function MenuSection({
 
             return matchesCategory && matchesSearch;
         });
-    }, [search, category]);
+    }, [search, category, foods]);
 
     const getQuantity = (foodId) => {
         const item = cart.find((item) => item.id === foodId);
@@ -185,9 +131,19 @@ function MenuSection({
                             >
 
                                 {/* Food Image */}
-                                <div className="flex h-48 items-center justify-center bg-orange-50 text-7xl">
-                                    {food.emoji}
-                                </div>
+                                {food.image ? (
+                                    <div className="h-48 bg-orange-50">
+                                        <img
+                                            src={food.image.startsWith("http") || food.image.startsWith("data:") ? food.image : `${API_BASE_URL}${food.image}`}
+                                            alt={food.name}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="flex h-48 items-center justify-center bg-orange-50 text-7xl">
+                                        {food.emoji}
+                                    </div>
+                                )}
 
                                 <div className="p-5">
 

@@ -1,10 +1,17 @@
 import express from "express";
 import cors from "cors";
 
+import path from "path";
+import { fileURLToPath } from "url";
+
 import { initializeDatabase } from "./database/initDatabase.js";
 
 import orderRoutes from "./routes/orderRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import foodRoutes from "./routes/foodRoutes.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -21,7 +28,9 @@ app.use(
     })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => {
     res.json({
@@ -31,8 +40,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/orders", orderRoutes);
-
 app.use("/api/admin", adminRoutes);
+app.use("/api/foods", foodRoutes);
 
 app.use((req, res) => {
     res.status(404).json({
