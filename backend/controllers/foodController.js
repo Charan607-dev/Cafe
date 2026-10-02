@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import {
     createFood,
     getAllFoods,
@@ -8,14 +5,6 @@ import {
     updateFoodById,
     deleteFoodById,
 } from "../models/foodModel.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadDir = path.join(__dirname, "../uploads/foods");
-
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
 
 // Category to default emoji helper
 function getCategoryEmoji(category) {
@@ -79,21 +68,7 @@ export async function addFood(req, res) {
 
         let imageUrl = null;
 
-        // If an image was uploaded via base64 data URL
-        if (image && typeof image === "string" && image.startsWith("data:image/")) {
-            const matches = image.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
-            if (matches) {
-                const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
-                const base64Data = matches[2];
-                const filename = `food_${Date.now()}_${Math.floor(Math.random() * 10000)}.${ext}`;
-                const filepath = path.join(uploadDir, filename);
-
-                fs.writeFileSync(filepath, Buffer.from(base64Data, "base64"));
-                imageUrl = `/uploads/foods/${filename}`;
-            } else {
-                imageUrl = image;
-            }
-        } else if (image && typeof image === "string") {
+        if (image && typeof image === "string") {
             imageUrl = image;
         }
 
@@ -160,45 +135,10 @@ export async function editFood(req, res) {
 
         let imageUrl = existingFood.image;
 
-        // If new base64 image is uploaded
-        if (image && typeof image === "string" && image.startsWith("data:image/")) {
-            const matches = image.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
-            if (matches) {
-                const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
-                const base64Data = matches[2];
-                const filename = `food_${Date.now()}_${Math.floor(Math.random() * 10000)}.${ext}`;
-                const filepath = path.join(uploadDir, filename);
-
-                fs.writeFileSync(filepath, Buffer.from(base64Data, "base64"));
-                imageUrl = `/uploads/foods/${filename}`;
-
-                // Clean up previous image file if it was a local uploaded file
-                if (existingFood.image && existingFood.image.startsWith("/uploads/foods/")) {
-                    const oldPath = path.join(uploadDir, path.basename(existingFood.image));
-                    if (fs.existsSync(oldPath)) {
-                        try {
-                            fs.unlinkSync(oldPath);
-                        } catch (e) {
-                            console.error("Error removing old food image:", e);
-                        }
-                    }
-                }
-            }
-        } else if (image === null || image === "") {
-            // Remove image if explicitly cleared
-            if (existingFood.image && existingFood.image.startsWith("/uploads/foods/")) {
-                const oldPath = path.join(uploadDir, path.basename(existingFood.image));
-                if (fs.existsSync(oldPath)) {
-                    try {
-                        fs.unlinkSync(oldPath);
-                    } catch (e) {
-                        console.error("Error removing old food image:", e);
-                    }
-                }
-            }
-            imageUrl = null;
-        } else if (image !== undefined) {
+        if (image && typeof image === "string") {
             imageUrl = image;
+        } else if (image === null || image === "") {
+            imageUrl = null;
         }
 
         const foodEmoji = emoji || (category ? getCategoryEmoji(category) : existingFood.emoji);
@@ -237,19 +177,6 @@ export async function removeFood(req, res) {
                 success: false,
                 message: "Food item not found.",
             });
-        }
-
-        // If local uploaded file exists, delete it
-        if (deletedFood.image && deletedFood.image.startsWith("/uploads/foods/")) {
-            const filename = path.basename(deletedFood.image);
-            const filepath = path.join(uploadDir, filename);
-            if (fs.existsSync(filepath)) {
-                try {
-                    fs.unlinkSync(filepath);
-                } catch (e) {
-                    console.error("Error removing uploaded image:", e);
-                }
-            }
         }
 
         res.json({
