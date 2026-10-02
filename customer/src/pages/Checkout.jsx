@@ -60,8 +60,7 @@ function Checkout({
                     </h1>
 
                     <p className="mt-3 text-gray-600">
-                        Enter your details and choose how you want to receive
-                        your food.
+                        Enter your details to confirm your order.
                     </p>
                 </div>
 
